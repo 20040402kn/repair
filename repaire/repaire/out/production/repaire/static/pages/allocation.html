@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- 页面meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>宿舍报修管理系统</title>
+    <meta name="description" content="报修管理">
+    <meta name="keywords" content="报修管理">
+    <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../plugins/elementui/index.css">
+    <link rel="stylesheet" href="../plugins/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <!-- 引入组件库 -->
+    <script type="text/javascript" src="../js/jquery.min.js"></script>
+    <script src="../js/vue.js"></script>
+    <script src="../plugins/elementui/index.js"></script>
+    <script src="../js/axios-0.18.0.js"></script>
+    <style>
+        .avatar-uploader .el-upload {
+            border: 1px dashed #d9d9d9;
+            border-radius: 6px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .avatar-uploader .el-upload:hover {
+            border-color: #409EFF;
+        }
+        .avatar-uploader-icon {
+            font-size: 28px;
+            color: #8c939d;
+            width: 178px;
+            height: 178px;
+            line-height: 178px;
+            text-align: center;
+        }
+        .avatar {
+            width: 178px;
+            height: 178px;
+            display: block;
+        }
+        .datatable {
+            position: relative;
+            box-sizing: border-box;
+            -webkit-box-flex: 1;
+            width: 100%;
+            max-width: 100%;
+            font-size: 14px;
+            color: rgb(96, 98, 102);
+            overflow: hidden;
+            flex: 1 1 0%;
+        }
+        .datatable td, .datatable th {
+            padding: 12px 0;
+            min-width: 0;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+            position: relative;
+            text-align: left;
+        }
+    </style>
+</head>
+<body class="hold-transition">
+<div id="app">
+    <div class="content-header">
+        <h1>报修管理<small>分配管理</small></h1>
+        <el-breadcrumb separator-class="el-icon-arrow-right" class="breadcrumb">
+            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+            <el-breadcrumb-item>报修管理</el-breadcrumb-item>
+            <el-breadcrumb-item>分配管理</el-breadcrumb-item>
+        </el-breadcrumb>
+    </div>
+    <div class="app-container">
+        <div class="box">
+            <div class="filter-container">
+                <el-input placeholder="维修编号/维修人员/报修项" v-model="pagination.queryString" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter"></el-input>
+                <el-button @click="findPage()" class="dalfBut">查询</el-button>
+                <el-button type="danger" class="butT" @click="resetFilters()">重置</el-button>
+                <el-button type="primary" class="butT" @click="handleCreate()">新建</el-button>
+            </div>
+            <el-table size="small" current-row-key="id" :data="dataList" stripe highlight-current-row>
+                <el-table-column prop="id" label="维修编号" align="center"></el-table-column>
+                <el-table-column prop="buildName" label="楼号" align="center"></el-table-column>
+                <el-table-column prop="dormName" label="宿舍号" align="center"></el-table-column>
+                <el-table-column prop="repairman" label="维修人员" align="center"></el-table-column>
+                <el-table-column prop="itemName" label="报修项" align="center"></el-table-column>
+                <el-table-column prop="typeName" label="报修类" align="center"></el-table-column>
+                <el-table-column prop="img" label="报修照片" align="center">
+                    <template slot-scope="scope">
+                        <img :src="'/setmealpic/' + scope.row.img" style="width: 50px; height: 50px;" />
+                    </template>
+                </el-table-column>
+                <el-table-column prop="statusName" label="报修状态" align="center"></el-table-column>
+                <el-table-column prop="requestDate" label="申请日期" align="center"></el-table-column>
+
+                <el-table-column label="操作" align="center">
+                    <template slot-scope="scope">
+                        <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">分配维修人员</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <div class="pagination-container">
+                <el-pagination
+                        class="pagiantion"
+                        @current-change="handleCurrentChange"
+                        :current-page="pagination.currentPage"
+                        :page-size="pagination.pageSize"
+                        layout="total, prev, pager, next, jumper"
+                        :total="pagination.total">
+                </el-pagination>
+            </div>
+            <!-- 编辑标签弹层 -->
+            <div class="add-form">
+                <el-dialog title="分配维修人员" :visible.sync="dialogFormVisible4Edit">
+                    <template>
+                        <el-tabs v-model="activeName" type="card">
+                            <el-tab-pane label="选择维修人员" name="first">
+                                <div class="checkScrol">
+                                    <table class="datatable">
+                                        <thead>
+                                        <tr>
+                                            <th>选择</th>
+                                            <th>姓名</th>
+                                            <th>单位</th>
+                                            <th>联系人</th>
+                                            <th>联系方式</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr v-for="w in tableData" :key="w.id">
+                                            <td>
+                                                <el-radio v-model="workersId" :label="w.id"></el-radio>
+                                            </td>
+                                            <td><label :for="w.id">{{w.username}}</label></td>
+                                            <td><label :for="w.id">{{w.unitName}}</label></td>
+                                            <td><label :for="w.id">{{w.contactPerson}}</label></td>
+                                            <td><label :for="w.id">{{w.contactPhone}}</label></td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </el-tab-pane>
+                        </el-tabs>
+                    </template>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="dialogFormVisible4Edit = false">取消</el-button>
+                        <el-button type="primary" @click="handleEdit()">确定</el-button>
+                    </div>
+                </el-dialog>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    var vue = new Vue({
+        el: '#app',
+        data:{
+            autoUpload:true,
+            img:null,
+            activeName:'first',
+            pagination: {//分页相关模型数据
+                currentPage: 1,//当前页码
+                pageSize:10,//每页显示的记录数
+                total:0,//总记录数
+                queryString:null//查询条件
+            },
+            tableData: [],
+            dataList: [],
+            formData: {},
+            workersId: null, // 新增字段
+            dialogFormVisible4Edit: false
+        },
+        created() {
+            this.findPage();
+        },
+        methods: {
+            resetFilters() {
+                this.pagination.queryString = '';
+                this.findPage();
+            },
+            handleUpdate(row){
+                this.resetForm();
+                this.formData = row;
+                this.dialogFormVisible4Edit = true;
+                axios.post("/user/getRepairWorkers").then((res)=>{
+                    this.tableData = res.data.data;
+                });
+                this.img="http://localhost:8080/setmealpic/"+row.img;
+            },
+            handleEdit(){
+                if(this.workersId){
+                    this.formData.workerId = this.workersId;
+                    axios.post("/request/allocate", this.formData).then((res)=>{
+                        if(res.data){
+                            this.$message({
+                                message: '分配成功!',
+                                type: 'success'
+                            });
+                        }else{
+                            this.$message({
+                                message: '分配失败!',
+                                type: 'error'
+                            });
+                        }
+                        this.dialogFormVisible4Edit = false;
+                        this.findPage();
+                    });
+                }else{
+                    this.$message({
+                        message: '必须选择维修人员！',
+                        type: 'warning'
+                    });
+                    return false;
+                }
+            },
+            handleFilter(){
+                this.pagination.currentPage = 1;
+                this.findPage();
+            },
+            findPage() {
+                var queryBean={
+                    currentPage:this.pagination.currentPage,
+                    pageSize:this.pagination.pageSize,
+                    queryString:this.pagination.queryString
+                }
+                axios.post("/request/findPage", queryBean)
+                    .then((res)=>{
+                        this.pagination.total = res.data.total;
+                        this.dataList = res.data.rows;
+                    })
+                    .catch(error=>{
+                        this.$message({
+                            type: 'error',
+                            message: '查询失败!'
+                        });
+                    });
+            },
+            resetForm() {
+                this.formData = {};
+                this.workersId = null; // 重置选择的维修人员ID
+                this.activeName = "first";
+            },
+            handleCurrentChange(currentPage) {
+                this.pagination.currentPage = currentPage;
+                this.findPage();
+            }
+        }
+    })
+</script>
+</body>
+</html>

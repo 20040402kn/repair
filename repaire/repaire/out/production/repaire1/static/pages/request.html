@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>宿舍报修管理系统</title>
+  <!-- 引入 Element UI 样式 -->
+  <link rel="stylesheet" href="../plugins/elementui/index.css">
+  <!-- 引入 Font Awesome 样式 -->
+  <link rel="stylesheet" href="../plugins/font-awesome/css/font-awesome.min.css">
+  <!-- 引入自定义样式 -->
+  <link rel="stylesheet" href="../css/style.css">
+  <!-- 引入其他样式 -->
+  <link rel="stylesheet" href="/css/itsoftui.css">
+  <link rel="stylesheet" type="text/css" href="css/base.css" />
+  <link rel="stylesheet" href="css/website.css" />
+  <link rel="stylesheet" href="css/layui.css">
+  <!-- 引入 jQuery -->
+  <script type="text/javascript" src="../js/jquery.min.js"></script>
+  <!-- 引入 Vue.js -->
+  <script src="../js/vue.js"></script>
+  <!-- 引入 Element UI -->
+  <script src="../plugins/elementui/index.js"></script>
+  <!-- 引入 Axios -->
+  <script src="../js/axios-0.18.0.js"></script>
+  <!-- 引入 Layui -->
+  <script src="../js/layui/layui.js" type="text/javascript" charset="utf-8"></script>
+  <!-- 引入 Layer -->
+  <script src="../js/layer/layer.js"></script>
+  <!-- 引入 ECharts -->
+  <script src="../js/ECharts/echarts.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      width: 1080px;
+      margin: 0 auto;
+      display: flex;
+    }
+    .main-left {
+      width: 728px;
+      margin-right: 15px;
+    }
+    .main-right {
+      width: 337px;
+    }
+    .main-panel {
+      background-color: #fff;
+      border-radius: 2px;
+      border: 1px solid #e6e6e6;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+    }
+    .panel-title {
+      position: relative;
+      height: 50px;
+      line-height: 45px;
+      padding: 0 15px;
+      border-bottom: 1px solid #E6E6E6;
+      margin-bottom: 5px;
+      color: #555;
+      font-size: 14px;
+    }
+    .panel-title span {
+      color: #b2b2b2;
+      font-size: 10px;
+      padding-right: 5px;
+      padding-left: 4px;
+      line-height: 11px;
+      background: #fff;
+      display: inline-block;
+      position: absolute;
+      bottom: -2px;
+      left: 10px;
+    }
+    .left_select {
+      margin-bottom: 15px;
+    }
+    .search {
+      margin-bottom: 15px;
+    }
+    .search_input {
+      height: 26px;
+      width: 200px;
+      padding: 0 20px 0 3px;
+      background-color: #f0f0f0;
+    }
+    .search_img {
+      cursor: pointer;
+    }
+    .comment {
+      border-bottom: 1px solid #e6e6e6;
+      padding: 15px;
+    }
+    .comment_top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .complain, .consult, .praise {
+      background-color: #f0f0f0;
+      padding: 3px 6px;
+      font-size: 11px;
+      color: #333;
+    }
+    .text-box {
+      margin-top: 10px;
+    }
+    .bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .icon_text {
+      display: flex;
+      align-items: center;
+    }
+    .icon_text img {
+      margin-right: 5px;
+    }
+    .comment_content {
+      margin-top: 10px;
+      color: #666;
+    }
+    .imgShow {
+      margin-top: 10px;
+    }
+    .image_div {
+      margin-bottom: 10px;
+    }
+    .image_div img {
+      width: 100%;
+    }
+    .pagination-container {
+      margin-top: 15px;
+      text-align: center;
+    }
+    .chart-container {
+      padding: 20px;
+    }
+    .chart {
+      width: 100%;
+      height: 400px;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="container">
+    <!-- 内容左列表 -->
+    <div class="main-left">
+      <div class="main-panel">
+        <div class="panel-title">
+          <span>报修列表</span>
+        </div>
+        <div class="left_select">
+          <div class="select">
+            <el-select v-model="pagination.areaId" placeholder="选择报修区域" @change="findPage">
+              <el-option label="全部" value=""></el-option>
+              <el-option v-for="area in areas" :key="area.id" :label="area.build_name" :value="area.id"></el-option>
+            </el-select>
+            <el-select v-model="pagination.projectId" placeholder="选择报修项目" @change="findPage">
+              <el-option label="全部" value=""></el-option>
+              <el-option v-for="project in projects" :key="project.id" :label="project.item_name" :value="project.id"></el-option>
+            </el-select>
+          </div>
+          <div class="search fr">
+            <el-input v-model="pagination.queryString" placeholder="单号/报修人/内容" @keyup.enter.native="findPage">
+              <el-button slot="append" icon="el-icon-search" @click="findPage"></el-button>
+            </el-input>
+          </div>
+        </div>
+        <!-- 帖子列表 -->
+        <div class="left_list" id="left_list">
+          <el-table :data="dataList" style="width: 100%">
+            <el-table-column prop="serialNumber" label="单号" width="180"></el-table-column>
+            <el-table-column prop="repairUserName" label="报修人" width="180"></el-table-column>
+            <el-table-column prop="createTime" label="创建时间" width="180"></el-table-column>
+            <el-table-column prop="areaName" label="区域" width="180"></el-table-column>
+            <el-table-column prop="projectName" label="项目" width="180"></el-table-column>
+            <el-table-column prop="status" label="状态" width="180">
+              <template slot-scope="scope">
+                <span v-if="scope.row.status == '0'" class="complain">待审核</span>
+                <span v-else-if="scope.row.status == '1' || scope.row.status == '2'" class="consult">待受理</span>
+                <span v-else-if="scope.row.status == '3'" class="consult">待完工</span>
+                <span v-else-if="scope.row.status == '4'" class="praise">已完工</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作">
+              <template slot-scope="scope">
+                <el-button size="mini" @click="handleDetail(scope.$index, scope.row)">详情</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div class="pagination-container">
+            <el-pagination
+                    @current-change="handleCurrentChange"
+                    :current-page="pagination.currentPage"
+                    :page-size="pagination.pageSize"
+                    layout="total, prev, pager, next, jumper"
+                    :total="pagination.total">
+            </el-pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 内容左列表end -->
+    <!-- 内容右统计 -->
+    <div class="main-right">
+      <div class="main-panel">
+        <div class="panel-title">
+          <span>统计信息</span>
+        </div>
+        <div class="chart-container">
+          <div class="chart" id="repairChart"></div>
+        </div>
+      </div>
+    </div>
+    <!-- 内容右统计end -->
+  </div>
+</div>
+<script>
+  new Vue({
+    el: '#app',
+    data: {
+      pagination: {
+        currentPage: 1,
+        pageSize: 10,
+        total: 0,
+        queryString: null,
+        areaId: null,
+        projectId: null
+      },
+      dataList: [],
+      areas: [],
+      projects: [],
+      imgUrl: '/path/to/images/', // 替换为实际图片路径
+      chartData: {
+        statusCounts: {
+          pending: 0,
+          processing: 0,
+          completed: 0
+        }
+      }
+    },
+    created() {
+      this.findPage();
+      this.loadAreas();
+      this.loadProjects();
+      this.loadChartData();
+    },
+    methods: {
+      findPage() {
+        const queryBean = {
+          currentPage: this.pagination.currentPage,
+          pageSize: this.pagination.pageSize,
+          queryString: this.pagination.queryString,
+          areaId: this.pagination.areaId,
+          projectId: this.pagination.projectId
+        };
+        axios.post('/request/findPage', queryBean)
+                .then(resp => {
+                  this.dataList = resp.data.rows;
+                  this.pagination.total = resp.data.total;
+                })
+                .catch(error => {
+                  this.$message({
+                    type: 'error',
+                    message: '查询失败!'
+                  });
+                });
+      },
+      handleCurrentChange(currentPage) {
+        this.pagination.currentPage = currentPage;
+        this.findPage();
+      },
+      loadAreas() {
+        axios.get('/area/getAllAreas')
+                .then(resp => {
+                  this.areas = resp.data.data;
+                })
+                .catch(error => {
+                  this.$message({
+                    type: 'error',
+                    message: '加载区域失败!'
+                  });
+                });
+      },
+      loadProjects() {
+        axios.get('/project/getAllProjects')
+                .then(resp => {
+                  this.projects = resp.data.data;
+                })
+                .catch(error => {
+                  this.$message({
+                    type: 'error',
+                    message: '加载项目失败!'
+                  });
+                });
+      },
+      loadChartData() {
+        axios.get('/report/getRepairStatusCounts')
+                .then(resp => {
+                  this.chartData.statusCounts = resp.data.data;
+                  this.initChart();
+                })
+                .catch(error => {
+                  this.$message({
+                    type: 'error',
+                    message: '加载统计信息失败!'
+                  });
+                });
+      },
+      initChart() {
+        const chart = echarts.init(document.getElementById('repairChart'));
+        const option = {
+          title: {
+            text: '报修状态统计',
+            subtext: '',
+            x: 'center'
+          },
+          tooltip: {
+            trigger: 'item',
+            formatter: "{a} <br/>{b} : {c} ({d}%)"
+          },
+          legend: {
+            orient: 'vertical',
+            left: 'left',
+            data: ['待审核', '待受理', '待完工', '已完工']
+          },
+          series: [
+            {
+              name: '报修状态',
+              type: 'pie',
+              radius: '55%',
+              center: ['50%', '60%'],
+              data: [
+                { value: this.chartData.statusCounts.pending, name: '待审核' },
+                { value: this.chartData.statusCounts.processing, name: '待受理' },
+                { value: this.chartData.statusCounts.completed, name: '已完工' }
+              ],
+              itemStyle: {
+                emphasis: {
+                  shadowBlur: 10,
+                  shadowOffsetX: 0,
+                  shadowColor: 'rgba(0, 0, 0, 0.5)'
+                }
+              }
+            }
+          ]
+        };
+        chart.setOption(option);
+      },
+      handleDetail(index, row) {
+        window.location.href = `repair_detail.html?id=${row.id}`;
+      }
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- 页面meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>宿舍报修管理系统</title>
+    <meta name="description" content="报修管理">
+    <meta name="keywords" content="报修管理">
+    <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../plugins/elementui/index.css">
+    <link rel="stylesheet" href="../plugins/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="hold-transition">
+<div id="app">
+    <div class="content-header">
+        <h1>报修管理<small>报修项管理</small></h1>
+        <el-breadcrumb separator-class="el-icon-arrow-right" class="breadcrumb">
+            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+            <el-breadcrumb-item>报修管理</el-breadcrumb-item>
+            <el-breadcrumb-item>报修项管理</el-breadcrumb-item>
+        </el-breadcrumb>
+    </div>
+    <div class="app-container">
+        <div class="box">
+            <div class="filter-container">
+                <el-input placeholder="项目名称/项目类别" v-model="pagination.queryString" style="width: 200px;" class="filter-item"></el-input>
+                <el-button @click="findPage()" class="dalfBut">查询</el-button>
+                <el-button type="danger" class="butT" @click="resetFilters()">重置</el-button>
+                <el-button type="primary" class="butT" @click="handleCreate()">新建</el-button>
+            </div>
+            <el-table size="small" current-row-key="id" :data="dataList" stripe highlight-current-row>
+                <el-table-column prop="id" label="项目编码" align="center"></el-table-column>
+                <el-table-column prop="itemName" label="项目名称" align="center"></el-table-column>
+                <el-table-column prop="typeName" label="项目类别" align="center"></el-table-column>
+                <el-table-column prop="remark" label="项目说明" align="center"></el-table-column>
+                <el-table-column label="操作" align="center">
+                    <template slot-scope="scope">
+                        <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
+                        <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <div class="pagination-container">
+                <el-pagination
+                        class="pagiantion"
+                        @current-change="handleCurrentChange"
+                        :current-page="pagination.currentPage"
+                        :page-size="pagination.pageSize"
+                        layout="total, prev, pager, next, jumper"
+                        :total="pagination.total">
+                </el-pagination>
+            </div>
+            <!-- 新增标签弹层 -->
+            <div class="add-form">
+                <el-dialog title="新增报修项" :visible.sync="dialogFormVisible">
+                    <!-- 被校验的表单必须有这个属性 ref -->
+                    <el-form ref="dataAddForm" :model="formData" :rules="rules" label-position="right" label-width="100px">
+                        <el-row>
+                            <el-col :span="12">
+                                <el-form-item label="项目名称" prop="itemName">
+                                    <el-input v-model="formData.itemName"/>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-form-item label="项目类别" prop="typeName">
+                                    <el-select v-model="typeId" placeholder="请选择类别">
+                                        <el-option
+                                                v-for="type in types"
+                                                :key="type.id"
+                                                :label="type.typeName"
+                                                :value="type.id">
+                                        </el-option>
+                                    </el-select>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="24">
+                                <el-form-item label="项目说明">
+                                    <el-input v-model="formData.remark" type="textarea"></el-input>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="dialogFormVisible = false">取消</el-button>
+                        <el-button type="primary" @click="handleAdd()">确定</el-button>
+                    </div>
+                </el-dialog>
+            </div>
+            <!-- 编辑标签弹层 -->
+            <div class="add-form">
+                <el-dialog title="编辑报修项" :visible.sync="dialogFormVisible4Edit">
+                    <el-form ref="dataEditForm" :model="formData" :rules="rules" label-position="right" label-width="100px">
+                        <el-row>
+                            <el-col :span="12">
+                                <el-form-item label="项目名称" prop="itemName">
+                                    <el-input v-model="formData.itemName"/>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-form-item label="项目类别" prop="typeName">
+                                    <el-select v-model="typeId" placeholder="请选择类别">
+                                        <el-option
+                                                v-for="type in types"
+                                                :key="type.id"
+                                                :label="type.typeName"
+                                                :value="type.id">
+                                        </el-option>
+                                    </el-select>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="24">
+                                <el-form-item label="项目说明">
+                                    <el-input v-model="formData.remark" type="textarea"></el-input>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="dialogFormVisible4Edit = false">取消</el-button>
+                        <el-button type="primary" @click="handleEdit()">确定</el-button>
+                    </div>
+                </el-dialog>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<!-- 引入组件库 -->
+<script src="../js/vue.js"></script>
+<script src="../plugins/elementui/index.js"></script>
+<script type="text/javascript" src="../js/jquery.min.js"></script>
+<script src="../js/axios-0.18.0.js"></script>
+<script>
+    var vue = new Vue({
+        el: '#app',
+        data:{
+            pagination: {//分页相关模型数据
+                currentPage: 1,//当前页码
+                pageSize:10,//每页显示的记录数
+                total:0,//总记录数
+                queryString:null//查询条件
+            },
+            typeId:'',
+            dataList: [],//当前页要展示的分页列表数据
+            formData: {},//表单数据
+            dialogFormVisible: false,//增加表单是否可见
+            dialogFormVisible4Edit:false,//编辑表单是否可见
+            rules: {//校验规则
+                itemName: [{ required: true, message: '项目名称为必填项', trigger: 'blur' }],
+                // typeId: [{ required: true, message: '项目类别为必填项', trigger: 'change' }]
+            },
+            types: [] // 类别列表
+        },
+        //钩子函数，VUE对象初始化完成后自动执行
+        created() {
+            this.findPage();
+            this.loadTypes();
+        },
+        methods: {
+            resetFilters() {
+                this.pagination.queryString = '';
+                this.findPage();
+            },
+            // 加载类别列表
+            loadTypes() {
+                axios.get('/type/getAllTypes')
+                    .then(resp => {
+                        this.types = resp.data.data;
+                    })
+                    .catch(error => {
+                        this.$message({
+                            type: 'error',
+                            message: '加载类别失败!'
+                        });
+                    });
+            },
+            //编辑报修项
+            handleEdit() {
+                this.$refs['dataEditForm'].validate((valid) => {
+                    if (valid) {
+                        alert('校验通过');
+                        axios.post('/item/saveItem?id='+this.typeId,this.formData)
+                            .then(resp=>{
+                                if(resp.data.flag){
+                                    this.$message({
+                                        type: 'success',
+                                        message: '更新成功!'
+                                    });
+                                }
+                                this.dialogFormVisible4Edit=false;
+                                this.findPage();
+                            })
+                            .catch(error=>{
+                                this.$message({
+                                    type: 'error',
+                                    message: '更新失败'
+                                });
+                            })
+                    } else {
+                        this.$message({
+                            type: 'error',
+                            message: '操作失败!'
+                        });
+                        return false;
+                    }
+                });
+            },
+            //添加报修项
+            handleAdd () {
+                this.$refs['dataAddForm'].validate((valid) => {
+                    if (valid) {
+                        alert('校验通过');
+                        axios.post('/item/saveItem?id='+this.typeId,this.formData)
+                            .then(resp=>{
+                                if(resp.data.flag){
+                                    this.$message({
+                                        type: 'success',
+                                        message: '添加成功!'
+                                    });
+                                }
+                                this.dialogFormVisible=false;
+                                this.findPage();
+                            })
+                            .catch(error=>{
+                                this.$message({
+                                    type: 'error',
+                                    message: '添加失败'
+                                });
+                            })
+                    } else {
+                        this.$message({
+                            type: 'error',
+                            message: '操作失败!'
+                        });
+                        return false;
+                    }
+                });
+            },
+            //分页查询
+            findPage() {
+                //第几页 展示数据条数 是否输入查询条件
+                var queryBean={
+                    currentPage:this.pagination.currentPage,
+                    pageSize:this.pagination.pageSize,
+                    queryString:this.pagination.queryString
+                }
+                axios.post('/item/findPage',queryBean)
+                    .then(resp=>{
+                        //请求成功
+                        this.dataList=resp.data.rows;
+                        this.pagination.total=resp.data.total;
+                    })
+                    .catch(error=>{
+                        //请求失败
+                        this.$message({
+                            type: 'error',
+                            message: '查询失败!'
+                        });
+                    });
+            },
+            //重置表单
+            resetForm() {
+                this.formData={};
+            },
+            //弹出添加窗口
+            handleCreate() {
+                //清空窗口
+                this.resetForm();
+                //弹出窗口
+                this.dialogFormVisible=true;//显示窗口
+            },
+            //弹出编辑窗口
+            handleUpdate(row) {
+                //弹出编辑窗口
+                this.dialogFormVisible4Edit=true;//显示窗口
+                this.formData = { ...row };
+
+                // 加载项目的类别信息
+                axios.get('/item/getItemTypeByItemId?id=' + row.id)
+                    .then(resp => {
+                        // console.log('Response data:', resp.data.data);
+                        if (resp.data.flag) {
+                            this.typeId = resp.data.data.id;
+                            // console.log(this.typeId)
+                        }
+                    })
+                    .catch(error => {
+                        this.$message({
+                            type: 'error',
+                            message: '加载类别信息失败!'
+                        });
+                    });
+            },
+            //切换页码显示分页信息
+            handleCurrentChange(currentPage) {
+                //更换页码
+                this.pagination.currentPage=currentPage;
+                //使用更换后的页码查询
+                this.findPage();
+            },
+            // 删除报修项
+            handleDelete(row) {
+                //异步删除检查项信息
+                //row 删除的当前行对象 row.id
+                this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    //删除异步请求
+                    axios.post('/item/deleteItemById?id='+row.id).then((res)=>{
+                        if(res.data.flag){
+                            this.$message({
+                                type: 'success',
+                                message: '删除成功!'
+                            });
+                        }else{
+                            this.$message.error(res.data.message);
+                        }
+                        //一定要进行页面刷新
+                        this.findPage();
+                    });
+                }).catch(() => {
+                    //取消删除
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+            }
+        }
+    })
+</script>
+</html>

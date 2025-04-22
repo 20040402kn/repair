@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- 页面meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>医疗管家</title>
+    <meta name="description" content="医疗管家">
+    <meta name="keywords" content="医疗管家">
+    <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../plugins/elementui/index.css">
+    <link rel="stylesheet" href="../plugins/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="hold-transition">
+<div id="app">
+    <div class="content-header">
+        <h1>预约管理<small>订单列表</small></h1>
+        <el-breadcrumb separator-class="el-icon-arrow-right" class="breadcrumb">
+            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+            <el-breadcrumb-item>预约管理</el-breadcrumb-item>
+            <el-breadcrumb-item>订单列表</el-breadcrumb-item>
+        </el-breadcrumb>
+    </div>
+    <div class="app-container">
+        <div class="box">
+            <div class="filter-container">
+                <el-input placeholder="订单编号/会员名称" v-model="pagination.queryString" style="width: 200px;" class="filter-item"></el-input>
+                <el-button @click="findPage()" class="dalfBut">查询</el-button>
+            </div>
+
+            <el-table style="width: 100%" current-row-key="id" :data="dataList" stripe highlight-current-row>
+                <el-table-column type="index" align="center" label="序号"></el-table-column>
+
+                <el-table-column prop="id" width="50" label="订单编号" align="center"></el-table-column>
+                <el-table-column prop="orderDate" label="预约日期" align="center"></el-table-column>
+                <el-table-column prop="orderType" label="预约方式" align="center"></el-table-column>
+                <el-table-column prop="orderStatus" label="订单状态" align="center"></el-table-column>
+                <el-table-column prop="tmember.name" label="会员名称" align="center"></el-table-column>
+                <el-table-column prop="tmember.phoneNumber" label="会员电话" align="center"></el-table-column>
+                <el-table-column prop="tsetmeal.name" label="套餐名称" align="center"></el-table-column>
+                <el-table-column prop="tsetmeal.price" width="100" label="套餐价格" align="center"></el-table-column>
+
+                <el-table-column label="操作" align="center">
+                    <template slot-scope="scope">
+                        <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
+                        <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+
+            <div class="pagination-container">
+                <el-pagination
+                        class="pagiantion"
+                        @current-change="handleCurrentChange"
+                        :current-page="pagination.currentPage"
+                        :page-size="pagination.pageSize"
+                        layout="total, prev, pager, next, jumper"
+                        :total="pagination.total">
+                </el-pagination>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<!-- 引入组件库 -->
+<script src="../js/vue.js"></script>
+<script src="../plugins/elementui/index.js"></script>
+<script type="text/javascript" src="../js/jquery.min.js"></script>
+<script src="../js/axios-0.18.0.js"></script>
+<script>
+    var vue = new Vue({
+        el: '#app',
+        data:{
+            pagination: {//分页相关模型数据
+                currentPage: 1,//当前页码
+                pageSize:10,//每页显示的记录数
+                total:0,//总记录数
+                queryString:null//查询条件
+            },
+            dataList: [],//当前页要展示的分页列表数据
+            formData: {}//表单数据
+        },
+        //钩子函数，VUE对象初始化完成后自动执行
+        created() {
+            //分页展示数据的方法
+            this.findPage();
+        },
+        methods: {
+            //查询 axios展示数据
+            findPage() {
+                // 第几页   展示数据条数  是否输入查询条件
+                axios.post('/order/showOrderDetailInfo')
+                    .then((resp)=>{
+                        //请求成功
+                        this.dataList = resp.data.data;
+                    })
+                    .catch((error)=>{
+                        //请求失败
+                        this.$message({
+                            type: 'error',
+                            message: '查询失败!'
+                        });
+                    });
+            },
+            handleCurrentChange(currentPage){
+
+            },
+            // 删除检查项
+            handleDelete(row) {
+                //按照主键删除
+                this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    //删除异步请求
+                    axios.post('/checkitem/deleteById?id='+row.id)
+                        .then((resp)=>{
+                            if(resp.data.flag){
+                                this.$message({
+                                    type: 'success',
+                                    message: '删除成功!'
+                                });
+                            }
+                            //刷新当前页面
+                            this.findPage();
+                        })
+                        .catch((error)=>{
+                            this.$message({
+                                type: 'error',
+                                message: '删除失败!'
+                            });
+                        });
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+            }
+        }
+    })
+</script>
+</html>

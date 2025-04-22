@@ -1,0 +1,25 @@
+server:
+  port: 8080  #端口
+  servlet:
+    context-path: / # 全局访问路径
+#数据源
+spring:
+  datasource:
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3307/project
+#    type: com.alibaba.druid.pool.DruidDataSource
+  mvc:
+    format:
+      date: yyyy-MM-dd  #处理日期转换的问题
+
+#mybatisplus 配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+
+# 图片路径的统一配置
+setmealpic:
+  path: 'E:\\upfile\\sdlg\\'

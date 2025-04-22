@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- 页面meta -->
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>宿舍报修管理系统 - 详情</title>
+  <meta name="description" content="报修管理">
+  <meta name="keywords" content="报修管理">
+  <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+  <!-- 引入样式 -->
+  <link rel="stylesheet" href="../plugins/elementui/index.css">
+  <link rel="stylesheet" href="../plugins/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <!-- 引入组件库 -->
+  <script src="../js/vue.js"></script>
+  <script src="../plugins/elementui/index.js"></script>
+  <script type="text/javascript" src="../js/jquery.min.js"></script>
+  <script src="../js/axios-0.18.0.js"></script>
+  <style>
+    .text {
+      font-size: 14px;
+    }
+
+    .item {
+      margin-bottom: 18px;
+    }
+
+    .clearfix:before,
+    .clearfix:after {
+      display: table;
+      content: "";
+    }
+    .clearfix:after {
+      clear: both
+    }
+
+    .box-card {
+      width: 1650px;
+    }
+
+    .comment {
+      border: 1px solid #e6e6e6;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 15px;
+      background-color: #fff;
+    }
+
+    .comment_top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .complain,.complain2,.complain3,.complain4, .consult, .praise {
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 12px;
+    }
+
+    .complain {
+      background-color: #ff4d4f;
+    }
+    .complain2 {
+      background-color: #1890ff;
+    }
+    .complain3 {
+      background-color:  #ff9900;
+    }
+    .complain4 {
+      background-color:  #52c41a;
+    }
+
+    .consult {
+      background-color: #1890ff;
+    }
+
+    .praise {
+      background-color: #52c41a;
+    }
+
+    .icon_text, .icon_text1 {
+      display: flex;
+      align-items: center;
+      margin-right: 10px;
+    }
+
+    .icon_text i, .icon_text1 i {
+      margin-right: 5px;
+    }
+
+    .text-box {
+      margin-bottom: 10px;
+    }
+
+    .bottom {
+      display: flex;
+      align-items: center;
+    }
+
+    .comment_content {
+      margin-bottom: 10px;
+    }
+
+    .imgShow {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .image_div {
+      width: 100px;
+      height: 100px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+
+    .image_div img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="hold-transition">
+<div id="app">
+  <div class="app-container">
+    <div class="box">
+      <el-card class="box-card">
+        <div class="comment_top">
+          <div>
+            <span v-if="request.statusName === '未分配'" class="complain">{{ request.statusName }}</span>
+            <span v-else-if="request.statusName === '已分配待处理'" class="complain2">{{ request.statusName }}</span>
+            <span v-else-if="request.statusName === '处理中'" class="complain3">{{ request.statusName }}</span>
+            <span v-else-if="request.statusName === '已处理'" class="complain4">{{ request.statusName }}</span>
+            <span class="canteen" style="font-weight: bold">{{ request.itemName }}</span>
+          </div>
+          <div class="comment_content">{{ request.description }}</div>
+          <div v-if="request.img" class="imgShow">
+            <div class="image_div">
+              <img :src="'/setmealpic/' + request.img" alt="" style="width:100%">
+            </div>
+          </div>
+          <el-divider></el-divider>
+          <div class="icon_text serialNumbertext_img">
+            <i class="el-icon-document"></i><span style="color: #999999;margin-left: 7px">单号：{{ request.id }}</span>
+          </div>
+        </div>
+        <div class="text-box">
+          <div class="bottom">
+            <div class="icon_text">
+              <span style="color:#999999" v-if="request.repairman">{{ request.repairman }}</span>
+              <span style="color:#999999" v-else>未分配</span>
+            </div>
+            <div class="icon_text">
+              <i class="el-icon-date"></i><span style="color:#999999">{{ request.requestDate }}</span>
+            </div>
+            <div class="icon_text1">
+              <i class="el-icon-location-outline"></i>
+              <span style="color:#999999">{{ request.buildName }} {{ request.dormName }}</span>
+            </div>
+          </div>
+        </div>
+      </el-card>
+    </div>
+  </div>
+</div>
+</body>
+<script>
+  console.log('Vue instance is being created'); // 添加调试信息
+  var vue = new Vue({
+    el: '#app',
+    data: {
+       request: null // 存储传递过来的 request 数据
+    },
+    // 钩子函数，VUE对象初始化完成后自动执行
+    created() {
+      console.log('Vue instance created'); // 添加调试信息
+      // 获取 request 数据
+      const requestString = this.getQueryVariable('request');
+      if (requestString) {
+        try {
+          this.request = JSON.parse(requestString);
+          console.log('Parsed request:', this.request); // 添加调试信息
+        } catch (error) {
+          console.error('Error parsing request:', error);
+        }
+      } else {
+        console.error('No request data found in URL');
+      }
+    },
+    methods: {
+      // 解析 URL 参数
+      getQueryVariable(variable) {
+        const query = window.location.search.substring(1);
+        const vars = query.split('&');
+        for (let i = 0; i < vars.length; i++) {
+          const pair = vars[i].split('=');
+          if (decodeURIComponent(pair[0]) === variable) {
+            return decodeURIComponent(pair[1]);
+          }
+        }
+        return null;
+      }
+    }
+  });
+</script>
+</html>
